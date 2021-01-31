@@ -27,10 +27,23 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define OLED_DISABLE_TIMEOUT
 
-#define USE_SERIAL_PD2
+#define TAPPING_TERM 200
+#define IGNORE_MOD_TAP_INTERRUPT
+
+#ifdef RGBLIGHT_ENABLE
+    #undef RGBLED_NUM
+    #define RGBLIGHT_ANIMATIONS
+    #define RGBLED_NUM 27
+    #define RGBLIGHT_LIMIT_VAL 120
+    #define RGBLIGHT_HUE_STEP 10
+    #define RGBLIGHT_SAT_STEP 17
+    #define RGBLIGHT_VAL_STEP 17
+
+    #define RGBLIGHT_EFFECT_RAINBOW_MOOD
+#endif
 
 #ifdef RGB_MATRIX_ENABLE
-    #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_TYPING_HEATMAP
+    #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_RAINBOW_MOVING_CHEVRON
     #define RGB_MATRIX_KEYPRESSES
     #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
     #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 150 // limits maximum brightness of LEDs to 150 out of 255. Higher may cause the controller to crash.
