@@ -18,8 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 
+char wpm_str[10];
+enum layers {
+  _QWERTY,
+  _LOWER,
+  _RAISE,
+  _ADJUST
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-  [0] = LAYOUT_split_3x6_3(
+  [_QWERTY] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
     KC_ESCAPE,    KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,                         KC_Y,    KC_U,    KC_I,    KC_O,   KC_P, KC_BSLASH,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
@@ -31,7 +39,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                       //`--------------------------'  `--------------------------'
   ),
 
-  [1] = LAYOUT_split_3x6_3(
+  [_LOWER] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
       _______,    KC_1,    KC_2,    KC_3,    KC_4,    KC_5,                         KC_6,    KC_7,    KC_8,    KC_9,    KC_0,KC_EQUAL,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
@@ -43,19 +51,19 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                       //`--------------------------'  `--------------------------'
   ),
 
-  [2] = LAYOUT_split_3x6_3(
+  [_RAISE] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
       _______,   KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,                        KC_F6,   KC_F7,   KC_F8,   KC_F9,  KC_F10,  KC_F11,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
       _______, _______, _______, _______, _______, KC_LBRACKET,              KC_RBRACKET, _______, _______, _______, _______,  KC_F12,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
-      _______, _______, _______, _______, _______, KC_LPRN,                      KC_RPRN, _______, _______, _______, _______, _______,
+      _______, _______, _______, _______, _______, KC_LPRN,                      KC_RPRN, _______, _______, _______, KC_VOLD, KC_VOLU,
   //|--------+--------+--------+--------+--------+--------+--------|  |--------+--------+--------+--------+--------+--------+--------|
                                             MO(3),_______, _______,    _______, _______, _______
                                       //`--------------------------'  `--------------------------'
   ),
 
-  [3] = LAYOUT_split_3x6_3(
+  [_ADJUST] = LAYOUT_split_3x6_3(
   //,-----------------------------------------------------.                    ,-----------------------------------------------------.
         RESET, _______, _______, _______, _______, _______,                      _______, _______, _______, _______, _______, _______,
   //|--------+--------+--------+--------+--------+--------|                    |--------+--------+--------+--------+--------+--------|
@@ -70,40 +78,33 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #ifdef OLED_DRIVER_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  if (!is_master) {
-    return OLED_ROTATION_180;  // flips the display 180 degrees if offhand
+  if (is_master) {
+    return OLED_ROTATION_270;
   }
-  return rotation;
+  return OLED_ROTATION_180;
 }
 
-#define L_BASE 0
-#define L_LOWER 2
-#define L_RAISE 4
-#define L_ADJUST 8
-
 void oled_render_layer_state(void) {
-    oled_write_P(PSTR("Layer: "), false);
-    switch (layer_state) {
-        case L_BASE:
-            oled_write_ln_P(PSTR("Default"), false);
+    switch (get_highest_layer(layer_state)) {
+        case _QWERTY:
+            oled_write_ln_P(PSTR("[QWR]"), false);
             break;
-        case L_LOWER:
-            oled_write_ln_P(PSTR("Lower"), false);
+        case _LOWER:
+            oled_write_ln_P(PSTR("[LWR]"), false);
             break;
-        case L_RAISE:
-            oled_write_ln_P(PSTR("Raise"), false);
+        case _RAISE:
+            oled_write_ln_P(PSTR("[RSE]"), false);
             break;
-        case L_ADJUST:
-        case L_ADJUST|L_LOWER:
-        case L_ADJUST|L_RAISE:
-        case L_ADJUST|L_LOWER|L_RAISE:
-            oled_write_ln_P(PSTR("Adjust"), false);
+        case _ADJUST:
+            oled_write_ln_P(PSTR("[ADJ]"), false);
+            break;
+        default:
+            oled_write_ln_P(PSTR("[NOP]"), false);
             break;
     }
 }
 
-
-char keylog_str[24] = {};
+char keylog_str[30] = {};
 
 const char code_to_name[60] = {
     ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
@@ -122,13 +123,26 @@ void set_keylog(uint16_t keycode, keyrecord_t *record) {
   }
 
   // update keylog
-  snprintf(keylog_str, sizeof(keylog_str), "%dx%d, k%2d : %c",
+  snprintf(keylog_str, sizeof(keylog_str), "[MAT] %dx%d [KYC] %03d [LTR]  %c  ",
            record->event.key.row, record->event.key.col,
            keycode, name);
 }
 
 void oled_render_keylog(void) {
     oled_write(keylog_str, false);
+}
+
+void oled_render_wpm(void) {
+    sprintf(wpm_str, "[WPM] %03d", get_current_wpm());
+    oled_write(wpm_str, false);
+}
+
+void oled_render_separator(void) {
+    oled_write_ln_P(PSTR("_____"), false);
+}
+
+void oled_render_space(void) {
+    oled_write_ln_P(PSTR("     "), false);
 }
 
 void render_bootmagic_status(bool status) {
@@ -158,7 +172,11 @@ void oled_render_logo(void) {
 void oled_task_user(void) {
     if (is_master) {
         oled_render_layer_state();
+        oled_render_separator();
         oled_render_keylog();
+        oled_render_space();
+        oled_render_separator();
+        oled_render_wpm();
     } else {
         oled_render_logo();
     }

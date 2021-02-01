@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define IGNORE_MOD_TAP_INTERRUPT
 
 #ifdef RGB_MATRIX_ENABLE
-    #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_RAINBOW_MOVING_CHEVRON
+    #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_TYPING_HEATMAP
     #define RGB_MATRIX_KEYPRESSES
     #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
     #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 150 // limits maximum brightness of LEDs to 150 out of 255. Higher may cause the controller to crash.
@@ -89,3 +89,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if !defined(NO_PRINT) && !defined(CONSOLE_ENABLE)
     #define NO_PRINT
 #endif // !NO_PRINT
+
+#define OLED_FONT_H "keyboards/crkbd/lib/glcdfont.c"
