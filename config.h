@@ -30,18 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define TAPPING_TERM 200
 #define IGNORE_MOD_TAP_INTERRUPT
 
-#ifdef RGBLIGHT_ENABLE
-    #undef RGBLED_NUM
-    #define RGBLIGHT_ANIMATIONS
-    #define RGBLED_NUM 27
-    #define RGBLIGHT_LIMIT_VAL 120
-    #define RGBLIGHT_HUE_STEP 10
-    #define RGBLIGHT_SAT_STEP 17
-    #define RGBLIGHT_VAL_STEP 17
-
-    #define RGBLIGHT_EFFECT_RAINBOW_MOOD
-#endif
-
 #ifdef RGB_MATRIX_ENABLE
     #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_RAINBOW_MOVING_CHEVRON
     #define RGB_MATRIX_KEYPRESSES
@@ -101,6 +89,3 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #if !defined(NO_PRINT) && !defined(CONSOLE_ENABLE)
     #define NO_PRINT
 #endif // !NO_PRINT
-
-// #define OLED_FONT_H "keyboards/crkbd/keymaps/lazyproof/glcdfont.c"
-// #define OLED_FONT_H "keyboards/crkbd/lib/glcdfont.c"
