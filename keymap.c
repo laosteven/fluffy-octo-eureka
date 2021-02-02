@@ -84,6 +84,38 @@ oled_rotation_t oled_init_user(oled_rotation_t rotation) {
   return OLED_ROTATION_180;
 }
 
+void layer_rgb_matrix_indicator(uint8_t hue, uint8_t sat, uint8_t val) {
+    HSV hsv = { hue, sat, val };
+    RGB rgb = hsv_to_rgb(hsv);
+    for (uint8_t i = 0; i < DRIVER_LED_TOTAL; i++) {
+        if (HAS_FLAGS(g_led_config.flags[i], LED_FLAG_UNDERGLOW)) {
+            rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
+        }
+    }
+}
+
+void matrix_scan_user(void) {
+    switch (get_highest_layer(layer_state)){
+        case _QWERTY:
+            if (rgb_matrix_get_mode() == RGB_MATRIX_TYPING_HEATMAP) {
+                layer_rgb_matrix_indicator(0, 0, 0);
+            }
+            break;
+        case _LOWER:
+            layer_rgb_matrix_indicator(0, 255, 100);
+            break;
+        case _RAISE:
+            layer_rgb_matrix_indicator(85, 255, 100);
+            break;
+        case _ADJUST:
+            layer_rgb_matrix_indicator(170, 255, 100);
+            break;
+        default:
+            layer_rgb_matrix_indicator(0, 0, 0);
+            break;
+    }
+}
+
 void oled_render_layer_state(void) {
     switch (get_highest_layer(layer_state)) {
         case _QWERTY:
@@ -118,14 +150,14 @@ void set_keylog(uint16_t keycode, keyrecord_t *record) {
   char name = ' ';
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
         (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { keycode = keycode & 0xFF; }
-  if (keycode < 60) {
-    name = code_to_name[keycode];
-  }
+    if (keycode < 60) {
+        name = code_to_name[keycode];
+    }
 
-  // update keylog
-  snprintf(keylog_str, sizeof(keylog_str), "[MAT] %dx%d [KYC] %03d [LTR]  %c  ",
-           record->event.key.row, record->event.key.col,
-           keycode, name);
+    // update keylog
+    snprintf(keylog_str, sizeof(keylog_str), "[MAT] %dx%d [KYC] %03d [LTR]  %c  ",
+        record->event.key.row, record->event.key.col,
+        keycode, name);
 }
 
 void oled_render_keylog(void) {
