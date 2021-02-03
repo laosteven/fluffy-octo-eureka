@@ -90,4 +90,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     #define NO_PRINT
 #endif // !NO_PRINT
 
-#define OLED_FONT_H "keyboards/crkbd/lib/glcdfont.c"
+#define OLED_FONT_H "keyboards/crkbd/keymaps/lazyproof/glcdfont.c"

@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 
 char wpm_str[10];
+uint16_t wpm_graph_timer = 0;
+static uint32_t oled_timer = 0;
 enum layers {
   _QWERTY,
   _LOWER,
@@ -78,10 +80,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 #ifdef OLED_DRIVER_ENABLE
 oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-  if (is_master) {
     return OLED_ROTATION_270;
-  }
-  return OLED_ROTATION_180;
 }
 
 void layer_rgb_matrix_indicator(uint8_t hue, uint8_t sat, uint8_t val) {
@@ -119,45 +118,37 @@ void matrix_scan_user(void) {
 void oled_render_layer_state(void) {
     switch (get_highest_layer(layer_state)) {
         case _QWERTY:
-            oled_write_ln_P(PSTR("[QWR]"), false);
+            oled_write("[QWR]", false);
             break;
         case _LOWER:
-            oled_write_ln_P(PSTR("[LWR]"), false);
+            oled_write("[LWR]", true);
             break;
         case _RAISE:
-            oled_write_ln_P(PSTR("[RSE]"), false);
+            oled_write("[RSE]", true);
             break;
         case _ADJUST:
-            oled_write_ln_P(PSTR("[ADJ]"), false);
+            oled_write("[ADJ]", true);
             break;
         default:
-            oled_write_ln_P(PSTR("[NOP]"), false);
+            oled_write("[NOP]", true);
             break;
     }
 }
 
-char keylog_str[30] = {};
-
-const char code_to_name[60] = {
-    ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
-    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
-    'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
-    'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\',
-    '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
+char keylog_str[24] = {};
 
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
-  char name = ' ';
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
-        (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { keycode = keycode & 0xFF; }
-    if (keycode < 60) {
-        name = code_to_name[keycode];
+        (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) {
+        keycode = keycode & 0xFF;
+    } else if (keycode > 0xFF) {
+        keycode = 0;
     }
 
     // update keylog
-    snprintf(keylog_str, sizeof(keylog_str), "[MAT] %dx%d [KYC] %03d [LTR]  %c  ",
+    snprintf(keylog_str, sizeof(keylog_str), "[MAT] %dx%d [KYC] %03d ",
         record->event.key.row, record->event.key.col,
-        keycode, name);
+        keycode);
 }
 
 void oled_render_keylog(void) {
@@ -169,12 +160,91 @@ void oled_render_wpm(void) {
     oled_write(wpm_str, false);
 }
 
+#ifdef WPM_ENABLE
+// Inspired from brickbots' Kyria keymap
+// - https://github.com/brickbots/qmk_firmware/tree/brickbots_dev/keyboards/kyria/keymaps/brickbots
+// - https://www.reddit.com/r/MechanicalKeyboards/comments/evimyg/kyria_is_kool_onboard_wpm_calc_oled_graph/
+static void oled_render_wpm_graph(void) {
+    static uint8_t bar_count = 0;
+    uint8_t bar_height = 0;
+    uint8_t bar_segment = 0;
+
+    if (wpm_graph_timer == 0) {
+        wpm_graph_timer = timer_read();
+        return;
+    }
+    if(timer_elapsed(wpm_graph_timer) > 500) {
+        wpm_graph_timer = timer_read();
+        bar_height = get_current_wpm() / 20;
+
+        oled_pan(false);
+        bar_count++;
+        for (uint8_t i = (OLED_DISPLAY_HEIGHT / 8); i > 0; i--) {
+            switch (bar_height) {
+                case 0:
+                    bar_segment = timer_elapsed(wpm_graph_timer) % 2 == 1 ? 0 : 128;
+                    break;
+
+                case 1:
+                    bar_segment = 128;
+                    break;
+
+                case 2:
+                    bar_segment = 192;
+                    break;
+
+                case 3:
+                    bar_segment = 224;
+                    break;
+
+                case 4:
+                    bar_segment = 240;
+                    break;
+
+                case 5:
+                    bar_segment = 248;
+                    break;
+
+                case 6:
+                    bar_segment = 252;
+                    break;
+
+                case 7:
+                    bar_segment = 254;
+                    break;
+            }
+            bar_height = 0;
+
+            if (i % 2 == 1 && bar_count % 3 == 0)
+                bar_segment++;
+            oled_write_raw_byte(bar_segment, (i-1) * OLED_DISPLAY_WIDTH);
+        }
+    }
+}
+#endif
+
 void oled_render_separator(void) {
-    oled_write_ln_P(PSTR("_____"), false);
+    oled_write_ln("_____", false);
 }
 
 void oled_render_space(void) {
-    oled_write_ln_P(PSTR("     "), false);
+    oled_write_ln("", false);
+}
+
+void oled_render_idle(void) {
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_crkbd_logo();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
+    oled_render_space();
 }
 
 void render_bootmagic_status(bool status) {
@@ -192,32 +262,63 @@ void render_bootmagic_status(bool status) {
     }
 }
 
-void oled_render_logo(void) {
-    static const char PROGMEM crkbd_logo[] = {
-        0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, 0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0x8f, 0x90, 0x91, 0x92, 0x93, 0x94,
-        0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4,
-        0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf, 0xd0, 0xd1, 0xd2, 0xd3, 0xd4,
-        0};
-    oled_write_P(crkbd_logo, false);
-}
+// 5x3 Logos
+
+void oled_render_crkbd_logo(void) {
+    static const char PROGMEM font_logo[16] = {0x80, 0x81, 0x82, 0x83, 0x84, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0};
+    oled_write_P(font_logo, false);
+};
+
+void oled_render_qmk_logo(void) {
+    static const char PROGMEM font_qmk_logo[16] = {0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0};
+    oled_write_P(font_qmk_logo, false);
+};
 
 void oled_task_user(void) {
-    if (is_master) {
-        oled_render_layer_state();
-        oled_render_separator();
-        oled_render_keylog();
-        oled_render_space();
-        oled_render_separator();
-        oled_render_wpm();
-    } else {
-        oled_render_logo();
+    if (timer_elapsed32(oled_timer) > 100000 && timer_elapsed32(oled_timer) < 480000) {
+        oled_render_idle();
+        return;
+    }
+    else if (timer_elapsed32(oled_timer) > 480000) {
+        // 8mins
+        oled_off();
+        rgb_matrix_disable();
+        return;
+    }
+    else {
+        if (!is_oled_on()) {
+            oled_on();
+            rgb_matrix_enable();
+        }
+
+        if (is_master) {
+            oled_render_layer_state();
+            oled_render_separator();
+
+            oled_render_keylog();
+            oled_render_separator();
+
+            oled_render_wpm();
+            oled_render_wpm_graph();
+        } else {
+            oled_render_crkbd_logo();
+            oled_write_ln("crkbd", false);
+
+            oled_render_space();
+            oled_render_space();
+
+            oled_render_qmk_logo();
+
+            oled_render_space();
+        }
     }
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (record->event.pressed) {
-    set_keylog(keycode, record);
-  }
-  return true;
+    if (record->event.pressed) {
+        oled_timer = timer_read32();
+        set_keylog(keycode, record);
+    }
+    return true;
 }
 #endif // OLED_DRIVER_ENABLE
