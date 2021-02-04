@@ -18,7 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 
-char wpm_str[10];
+char wpm_str[15];
+char state_str[30];
 uint16_t wpm_graph_timer = 0;
 static uint32_t oled_timer = 0;
 enum layers {
@@ -152,12 +153,24 @@ void set_keylog(uint16_t keycode, keyrecord_t *record) {
 }
 
 void oled_render_keylog(void) {
+    if (strlen(keylog_str) == 0) {
+        snprintf(keylog_str, sizeof(keylog_str), "[MAT] 0x0 [KYC] 000 ");
+    }
     oled_write(keylog_str, false);
 }
 
 void oled_render_wpm(void) {
-    sprintf(wpm_str, "[WPM] %03d", get_current_wpm());
+    sprintf(wpm_str, "[WPM] %03d ", get_current_wpm());
     oled_write(wpm_str, false);
+}
+
+void oled_render_keylock(uint8_t led_usb_state) {
+    oled_write_P(PSTR("[MOD]"), false);
+    oled_write_P(PSTR("#"), led_usb_state & (1 << USB_LED_NUM_LOCK));
+    oled_write_P(PSTR(" "), false);
+    oled_write_P(PSTR("^"), led_usb_state & (1 << USB_LED_CAPS_LOCK));
+    oled_write_P(PSTR(" "), false);
+    oled_write_P(PSTR("%"), led_usb_state & (1 << USB_LED_SCROLL_LOCK));
 }
 
 #ifdef WPM_ENABLE
@@ -179,10 +192,10 @@ static void oled_render_wpm_graph(void) {
 
         oled_pan(false);
         bar_count++;
-        for (uint8_t i = (OLED_DISPLAY_HEIGHT / 8); i > 0; i--) {
+        for (uint8_t i = (OLED_DISPLAY_WIDTH / 8); i > 0; i--) {
             switch (bar_height) {
                 case 0:
-                    bar_segment = timer_elapsed(wpm_graph_timer) % 2 == 1 ? 0 : 128;
+                    bar_segment = 128;
                     break;
 
                 case 1:
@@ -217,7 +230,8 @@ static void oled_render_wpm_graph(void) {
 
             if (i % 2 == 1 && bar_count % 3 == 0)
                 bar_segment++;
-            oled_write_raw_byte(bar_segment, (i-1) * OLED_DISPLAY_WIDTH);
+
+            oled_write_raw_byte(bar_segment, (i-1) * OLED_DISPLAY_HEIGHT);
         }
     }
 }
@@ -228,23 +242,7 @@ void oled_render_separator(void) {
 }
 
 void oled_render_space(void) {
-    oled_write_ln("", false);
-}
-
-void oled_render_idle(void) {
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_crkbd_logo();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
-    oled_render_space();
+    oled_write_ln("     ", false);
 }
 
 void render_bootmagic_status(bool status) {
@@ -263,7 +261,6 @@ void render_bootmagic_status(bool status) {
 }
 
 // 5x3 Logos
-
 void oled_render_crkbd_logo(void) {
     static const char PROGMEM font_logo[16] = {0x80, 0x81, 0x82, 0x83, 0x84, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0};
     oled_write_P(font_logo, false);
@@ -275,8 +272,14 @@ void oled_render_qmk_logo(void) {
 };
 
 void oled_task_user(void) {
-    if (timer_elapsed32(oled_timer) > 100000 && timer_elapsed32(oled_timer) < 480000) {
-        oled_render_idle();
+    if (timer_elapsed32(oled_timer) > 380000 && timer_elapsed32(oled_timer) < 480000) {
+        oled_render_space();
+        oled_render_space();
+        oled_render_space();
+        oled_render_crkbd_logo();
+        oled_render_space();
+        oled_render_space();
+        oled_render_space();
         return;
     }
     else if (timer_elapsed32(oled_timer) > 480000) {
@@ -296,6 +299,9 @@ void oled_task_user(void) {
             oled_render_separator();
 
             oled_render_keylog();
+            oled_render_separator();
+
+            oled_render_keylock(host_keyboard_leds());
             oled_render_separator();
 
             oled_render_wpm();
