@@ -19,7 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 
 char wpm_str[15];
+char hsv_str[15];
+char mod_str[15];
 char state_str[30];
+char keylog_str[24] = {};
 uint16_t wpm_graph_timer = 0;
 static uint32_t oled_timer = 0;
 enum layers {
@@ -136,8 +139,6 @@ void oled_render_layer_state(void) {
     }
 }
 
-char keylog_str[24] = {};
-
 void set_keylog(uint16_t keycode, keyrecord_t *record) {
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
         (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) {
@@ -164,13 +165,22 @@ void oled_render_wpm(void) {
     oled_write(wpm_str, false);
 }
 
+void oled_render_hsv(void) {
+    sprintf(hsv_str, "h:%3ds:%3dv:%3d",
+        rgb_matrix_get_hue(),
+        rgb_matrix_get_sat(),
+        rgb_matrix_get_val()
+    );
+    oled_write(hsv_str, false);
+}
+
 void oled_render_keylock(uint8_t led_usb_state) {
-    oled_write_P(PSTR("[MOD]"), false);
-    oled_write_P(PSTR("#"), led_usb_state & (1 << USB_LED_NUM_LOCK));
-    oled_write_P(PSTR(" "), false);
-    oled_write_P(PSTR("^"), led_usb_state & (1 << USB_LED_CAPS_LOCK));
-    oled_write_P(PSTR(" "), false);
-    oled_write_P(PSTR("%"), led_usb_state & (1 << USB_LED_SCROLL_LOCK));
+
+    sprintf(mod_str, "num %scap %s",
+        led_usb_state & (1 << USB_LED_NUM_LOCK) ? "-" : "+",
+        led_usb_state & (1 << USB_LED_CAPS_LOCK) ? "-" : "+"
+    );
+    oled_write(mod_str, false);
 }
 
 #ifdef WPM_ENABLE
@@ -271,12 +281,19 @@ void oled_render_qmk_logo(void) {
     oled_write_P(font_qmk_logo, false);
 };
 
+void oled_render_kapi_logo(void) {
+    static const char PROGMEM font_kapi_logo_1[16] = {0x85, 0x86, 0x87, 0x88, 0x89, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0};
+    static const char PROGMEM font_kapi_logo_2[16] = {0x95, 0x96, 0x97, 0x98, 0x99, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0};
+    oled_write_P(get_current_wpm() % 2 == 1 ? font_kapi_logo_1 : font_kapi_logo_2, false);
+};
+
 void oled_task_user(void) {
     if (timer_elapsed32(oled_timer) > 380000 && timer_elapsed32(oled_timer) < 480000) {
         oled_render_space();
         oled_render_space();
         oled_render_space();
         oled_render_crkbd_logo();
+        oled_render_space();
         oled_render_space();
         oled_render_space();
         oled_render_space();
@@ -308,14 +325,13 @@ void oled_task_user(void) {
             oled_render_wpm_graph();
         } else {
             oled_render_crkbd_logo();
-            oled_write_ln("crkbd", false);
+            oled_write("crkbd", false);
+            oled_render_separator();
 
-            oled_render_space();
-            oled_render_space();
+            oled_render_hsv();
 
-            oled_render_qmk_logo();
-
-            oled_render_space();
+            oled_render_separator();
+            oled_render_kapi_logo();
         }
     }
 }
