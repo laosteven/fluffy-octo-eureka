@@ -13,10 +13,14 @@ RGB_MATRIX_ENABLE       = yes   # Matrix LEDs
 CFLAGS                 += -flto
 EXTRAFLAGS             += -flto
 
-ifeq ($(strip $(TEMPLATE)), alpha)
-    OPT_DEFS += -DTEMPLATE_ALPHA
+ifeq ($(strip $(SIDE)), right)
+    OPT_DEFS += -DIS_SIDE_RIGHT
 endif
 
 ifeq ($(strip $(TEMPLATE)), code)
     OPT_DEFS += -DTEMPLATE_CODE
+endif
+
+ifeq ($(strip $(TEMPLATE)), discord)
+    OPT_DEFS += -DTEMPLATE_DISCORD
 endif
