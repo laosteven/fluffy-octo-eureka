@@ -1,10 +1,9 @@
 #pragma once
 
 #if defined(OLED_DRIVER_ENABLE) && defined(RGB_MATRIX_ENABLE) && defined(WPM_ENABLE)
-char wpm_str[15];
-char hsv_str[15];
-char mod_str[15];
-char state_str[30];
+char wpm_str[12];
+char hsv_str[18];
+char mod_str[12];
 char keylog_str[24] = {};
 uint16_t wpm_graph_timer = 0;
 static uint32_t oled_timer = 0;
