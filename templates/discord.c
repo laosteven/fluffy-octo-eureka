@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../rgb.c"
-
 enum custom_keycodes {
     MONKAS = SAFE_RANGE,
     P_THIEF,

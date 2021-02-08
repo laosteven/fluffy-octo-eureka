@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef OLED_DRIVER_ENABLE
+#if defined(OLED_DRIVER_ENABLE) && defined(RGB_MATRIX_ENABLE) && defined(WPM_ENABLE)
 char wpm_str[15];
 char hsv_str[15];
 char mod_str[15];
@@ -62,7 +62,6 @@ void oled_render_keylog(void) {
     oled_write(keylog_str, false);
 }
 
-#ifdef RGB_MATRIX_ENABLE
 void oled_render_hsv(void) {
     sprintf(hsv_str, "h:%3ds:%3dv:%3d",
         rgb_matrix_get_hue(),
@@ -71,12 +70,6 @@ void oled_render_hsv(void) {
     );
     oled_write(hsv_str, false);
 }
-#else
-void oled_render_hsv(void) {
-    oled_render_space();
-    oled_render_space();
-}
-#endif // RGB_MATRIX_ENABLE
 
 void oled_render_keymods(uint8_t led_usb_state) {
     sprintf(mod_str, "num %scap %s",
@@ -86,7 +79,6 @@ void oled_render_keymods(uint8_t led_usb_state) {
     oled_write(mod_str, false);
 }
 
-#ifdef WPM_ENABLE
 void oled_render_wpm(void) {
     sprintf(wpm_str, "[WPM] %03d ", get_current_wpm());
     oled_write(wpm_str, false);
@@ -153,29 +145,6 @@ static void oled_render_wpm_graph(void) {
         }
     }
 }
-#else
-void oled_render_wpm(void) {
-    oled_render_space();
-}
-static void oled_render_wpm_graph(void) {
-    oled_render_space();
-}
-#endif // WPM_ENABLE
-
-void render_bootmagic_status(bool status) {
-    /* Show Ctrl-Gui Swap options */
-    static const char PROGMEM logo[][2][3] = {
-        {{0x97, 0x98, 0}, {0xb7, 0xb8, 0}},
-        {{0x95, 0x96, 0}, {0xb5, 0xb6, 0}},
-    };
-    if (status) {
-        oled_write_ln_P(logo[0][0], false);
-        oled_write_ln_P(logo[0][1], false);
-    } else {
-        oled_write_ln_P(logo[1][0], false);
-        oled_write_ln_P(logo[1][1], false);
-    }
-}
 
 // 5x3 Logos
 void oled_render_crkbd_logo(void) {
@@ -183,15 +152,12 @@ void oled_render_crkbd_logo(void) {
     oled_write_P(font_logo, false);
 };
 
-void oled_render_qmk_logo(void) {
-    static const char PROGMEM font_qmk_logo[16] = {0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0};
-    oled_write_P(font_qmk_logo, false);
-};
-
 void oled_render_kapi_logo(void) {
-    static const char PROGMEM font_kapi_logo_1[16] = {0x85, 0x86, 0x87, 0x88, 0x89, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0};
-    static const char PROGMEM font_kapi_logo_2[16] = {0x95, 0x96, 0x97, 0x98, 0x99, 0xb5, 0xb6, 0xb7, 0xb8, 0xb9, 0xd5, 0xd6, 0xd7, 0xd8, 0xd9, 0};
-    oled_write_P(get_current_wpm() % 2 == 1 ? font_kapi_logo_1 : font_kapi_logo_2, false);
+    static const char PROGMEM font_kapi_logo[2][16] = {
+        {0x8a, 0x8b, 0x8c, 0x8d, 0x8e, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0},
+        {0x85, 0x86, 0x87, 0x88, 0x89, 0xa5, 0xa6, 0xa7, 0xa8, 0xa9, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0}
+    };
+    oled_write_P(font_kapi_logo[get_current_wpm() % 2], false);
 };
 
 void oled_render_idle(void) {
@@ -239,20 +205,13 @@ void oled_task_user(void) {
     else if (timer_elapsed32(oled_timer) > 480000) {
         // 8mins
         oled_off();
-
-        #ifdef RGB_MATRIX_ENABLE
         rgb_matrix_disable();
-        #endif // OLED_DRIVER_ENABLE
-
         return;
     }
     else {
         if (!is_oled_on()) {
             oled_on();
-
-            #ifdef RGB_MATRIX_ENABLE
             rgb_matrix_enable();
-            #endif // RGB_MATRIX_ENABLE
         }
 
         if (is_master) {
@@ -262,4 +221,4 @@ void oled_task_user(void) {
         }
     }
 }
-#endif // OLED_DRIVER_ENABLE
+#endif // defined(OLED_DRIVER_ENABLE) && defined(RGB_MATRIX_ENABLE) && defined(WPM_ENABLE)

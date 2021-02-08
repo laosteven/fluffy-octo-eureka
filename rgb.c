@@ -11,34 +11,6 @@ void layer_rgb_matrix_indicator(uint8_t hue, uint8_t sat, uint8_t val) {
     }
 }
 
-void layer_rgb_matrix_lower(void) {
-    const uint16_t top_row[5] = { 9, 10, 17, 18, 23 };
-    const uint16_t nav_keys[2] = { 12, 15 };
-
-    for (uint8_t i = 0; i < sizeof top_row / sizeof *top_row; i++) {
-        rgb_matrix_set_color(top_row[i], 15, 0, 0);
-    }
-    for (uint8_t i = 0; i < sizeof nav_keys / sizeof *nav_keys; i++) {
-        rgb_matrix_set_color(nav_keys[i], 15, 0, 15);
-    }
-}
-
-void layer_rgb_matrix_raise(void) {
-#if defined(IS_SIDE_RIGHT)
-    const uint16_t fn_keys[7] = { 9, 10, 17, 18, 23, 24, 25 };
-
-    const uint16_t volume[2] = { 20, 21 };
-    for (uint8_t i = 0; i < sizeof volume / sizeof *volume; i++) {
-        rgb_matrix_set_color(volume[i], 15, 15, 0);
-    }
-#else
-    const uint16_t fn_keys[5] = { 9, 10, 17, 18, 23 };
-#endif
-    for (uint8_t i = 0; i < sizeof fn_keys / sizeof *fn_keys; i++) {
-        rgb_matrix_set_color(fn_keys[i], 0, 15, 0);
-    }
-}
-
 void matrix_scan_user(void) {
     switch (get_highest_layer(layer_state)){
         case _QWERTY:
@@ -48,11 +20,9 @@ void matrix_scan_user(void) {
             break;
         case _LOWER:
             layer_rgb_matrix_indicator(0, 255, 100);
-            layer_rgb_matrix_lower();
             break;
         case _RAISE:
             layer_rgb_matrix_indicator(85, 255, 100);
-            layer_rgb_matrix_raise();
             break;
         case _ADJUST:
             layer_rgb_matrix_indicator(170, 255, 100);
