@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../rgb.c"
-
 #define KC_CTSP     LGUI_T(KC_SPACE)        // Left Cmd | Space
 #define KC_SFBS     LSFT_T(KC_BSPACE)       // Left Shft | Backspace
 #define KC_SFTB     RSFT_T(KC_TAB)          // Right Shft | Tab

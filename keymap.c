@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "layers.h"
 #include "oled.c"
+#include "rgb.c"
 
 #if defined(TEMPLATE_DISCORD)
 #   include "templates/discord.c"
