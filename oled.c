@@ -25,6 +25,12 @@ void oled_render_layer_state(void) {
         case _QWERTY:
             oled_write("[QWR]", false);
             break;
+        case _MAC:
+            oled_write("[MAC]", true);
+            break;
+        case _GAMING:
+            oled_write("[GME]", true);
+            break;
         case _LOWER:
             oled_write("[LWR]", true);
             break;
@@ -196,13 +202,13 @@ void oled_render_slave(void) {
 }
 
 void oled_task_user(void) {
-    if (timer_elapsed32(oled_timer) > 360000 && timer_elapsed32(oled_timer) < 480000) {
-        // 6mins
+    if (timer_elapsed32(oled_timer) > 60000 && timer_elapsed32(oled_timer) < 80000) {
+        // 1min
         oled_render_idle();
         return;
     }
-    else if (timer_elapsed32(oled_timer) > 480000) {
-        // 8mins
+    else if (timer_elapsed32(oled_timer) > 80000) {
+        // 1min30
         oled_off();
         rgb_matrix_disable();
         return;

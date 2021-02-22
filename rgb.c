@@ -18,6 +18,12 @@ void matrix_scan_user(void) {
                 layer_rgb_matrix_indicator(0, 0, 0);
             }
             break;
+        case _GAMING:
+            layer_rgb_matrix_indicator(16, 255, 100);
+            break;
+        case _MAC:
+            layer_rgb_matrix_indicator(120, 255, 100);
+            break;
         case _LOWER:
             layer_rgb_matrix_indicator(0, 255, 100);
             break;
